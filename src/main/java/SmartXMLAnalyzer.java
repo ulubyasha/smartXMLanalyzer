@@ -6,9 +6,10 @@ import org.jsoup.select.Elements;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Collections;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.toMap;
 
 public class SmartXMLAnalyzer {
 
@@ -31,7 +32,7 @@ public class SmartXMLAnalyzer {
         return targetElement.attributes()
                 .asList()
                 .stream()
-                .collect(Collectors.toMap(Attribute::getKey, Attribute::getValue));
+                .collect(toMap(Attribute::getKey, Attribute::getValue));
     }
 
     private static String getPath(Element element) {
@@ -50,14 +51,23 @@ public class SmartXMLAnalyzer {
         Element targetElement = getTargetElement(originDocument);
         Map<String, String> targetElementAttributes = getAttributes(targetElement);
 
+        int count = 0;
+        Map<Element, Integer> matchedElements = new HashMap<>();
         for (Element element : otherDocument.getAllElements()) {
             for (Attribute attribute : element.attributes()) {
                 if (targetElementAttributes.containsValue(attribute.getValue())) {
-                    System.out.println(getPath(element));
-                    break;
+                    matchedElements.put(element, ++count);
                 }
             }
+            count = 0;
         }
+
+        Element element = matchedElements.entrySet().stream()
+                .sorted(Collections.reverseOrder(Map.Entry.comparingByValue()))
+                .collect(toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e2, LinkedHashMap::new))
+                .entrySet().iterator().next().getKey();
+
+        System.out.println(getPath(element));
     }
 
     public static void main(String[] args) {
