@@ -44,6 +44,13 @@ public class SmartXMLAnalyzer {
                 .collect(Collectors.joining(" > "));
     }
 
+    private static Element getFirstElementFromDescOrder(Map<Element, Integer> matchedElements) {
+        return matchedElements.entrySet().stream()
+                .sorted(Collections.reverseOrder(Map.Entry.comparingByValue()))
+                .collect(toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e2, LinkedHashMap::new))
+                .entrySet().iterator().next().getKey();
+    }
+
     private static void getSimilarElement(File originFile, File otherFile) {
         Document originDocument = getDocumentFromFile(originFile);
         Document otherDocument = getDocumentFromFile(otherFile);
@@ -51,23 +58,17 @@ public class SmartXMLAnalyzer {
         Element targetElement = getTargetElement(originDocument);
         Map<String, String> targetElementAttributes = getAttributes(targetElement);
 
-        int count = 0;
         Map<Element, Integer> matchedElements = new HashMap<>();
         for (Element element : otherDocument.getAllElements()) {
+            int count = 0;
             for (Attribute attribute : element.attributes()) {
                 if (targetElementAttributes.containsValue(attribute.getValue())) {
                     matchedElements.put(element, ++count);
                 }
             }
-            count = 0;
         }
-
-        Element element = matchedElements.entrySet().stream()
-                .sorted(Collections.reverseOrder(Map.Entry.comparingByValue()))
-                .collect(toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e2, LinkedHashMap::new))
-                .entrySet().iterator().next().getKey();
-
-        System.out.println(getPath(element));
+        Element similarElement = getFirstElementFromDescOrder(matchedElements);
+        System.out.println(getPath(similarElement));
     }
 
     public static void main(String[] args) {
